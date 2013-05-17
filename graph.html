@@ -14,6 +14,7 @@ body {
 
 .edge {
 	stroke: #999;
+	stroke-width: 1px;
 	stroke-opacity: .2;
 }
 </style>
@@ -24,24 +25,84 @@ body {
 var w = document.body.clientWidth;
 var h  = document.body.clientHeight;
 
-var force = d3.layout.force()
-	.gravity(10)
-	.charge(-50)
-	.linkDistance(10)
-	.size([w, h]);
+indexof = {};
+data = {};
 
-var svg = d3.select('body').append('svg')
-	.attr("class", 'graph')
-	.attr("width", w)
-	.attr("height", h);
-
-d3.json("./data/d3_graph.json", function( err, data){
+d3.json("./data/graphdata.json", function(err, info){
 	if (err) return console.warn(err);
-	//data.students = data.students.slice(0,100);
-	//data.edges = data.edges.slice(0,10000);
+
+	data['nodes'] = []
+
+	var index = 0;
+	for (username in info.students){
+		var student  = info.students[username];
+		student['name'] = student.FirstName + ' ' + student.LastName;
+		student['key'] = username;
+		student['type'] = 'student';
+		data['nodes'].push(student);
+
+		indexof[username] = index;
+		index += 1;
+	}
+	for (coursename in info.courses){
+		var course = info.courses[coursename];
+		course['key'] = coursename;
+		course['type'] = 'course';
+		data['nodes'].push(course);
+
+		indexof[coursename] = index;
+		index += 1;
+	}
+
+	data['edges'] = [];
+	for (coursename in info.courses){
+		var course = info.courses[coursename]
+		for ( i in course['members']){
+			edge = {};
+			edge = {'source': indexof[coursename], 'target': indexof[course['members'][i]]};
+			data['edges'].push(edge);
+		}
+	}
+	visualize();
+
+});
+
+var color_code = function(category){
+	this.Grade = {
+		'9': '#46aede',
+		'10': '#94e76b',
+		'11': '#ffac18',
+		'12': '#e32c57'
+	}
+	return this[category];
+}
+
+function visualize(){
+	var force = d3.layout.force()
+		.gravity(1)
+		.charge(-400)
+		.linkDistance(1)
+		.friction(0.95)
+		.alpha(10)
+		.size([w, h]);
+
+	var svg = d3.select('body').append('svg')
+		.attr("class", 'graph')
+		.attr("width", w)
+		.attr("height", h)
+		.attr("pointer-events", "all")
+		.append('g')
+		.call(d3.behavior.zoom().on("zoom", redraw))
+		.append('g');
+
+	function redraw() {
+		svg.attr("transform",
+		"translate(" + d3.event.translate + ")"
+		+ " scale(" + d3.event.scale + ")");
+	}
 
 	force
-		.nodes(data.students)
+		.nodes(data.nodes)
 		.links(data.edges)
 		.start();
 
@@ -51,26 +112,34 @@ d3.json("./data/d3_graph.json", function( err, data){
 		.attr('class', 'edge')
 		.style('stroke-width', 1);
 	var node = svg.selectAll('.node')
-		.data(data.students)
+		.data(data.nodes)
 		.enter().append('circle')
-		.attr('class', 'node')
-		.attr('r', 5)
-		.style('fill', function(d){
-			color = {
-				'9': '#efefef',
-				'10': '#94e76b',
-				'11': '#ffac18',
-				'12': '#e32c57'
-			}
-			return color[d.Grade];
+		.attr('class', function(d){
+			return d.type =='student' ? 'node student': 'node class';
 		})
-		.call(force.drag);
+		.attr('r', function(d){
+			return d.type =='student' ? 3: 5;
+		})
+		.on("mouseover", highlight)
+		.on("mouseout", nohighlight);
+
+	function nohighlight(){
+		// If clicked is false
+		node
+			.transition()
+			.duration(1000)
+			.style('fill', function(d){
+				return d.type =='student' ? color_code("Grade")[d.Grade]: "#000";
+			})
+			.style('opacity', function(d){
+				return d.type =='student' ? 1: 0.2;
+				
+			});
+	};
+	nohighlight();
+		//.call(force.drag);
 	node.append("title")
-		.text(function(d) {return d.UserName});
-	node.append("svg:text")
-		.attr("class", "nodetext")
-		.attr("dy", -3)
-		.text(function(d) {return d.UserName});
+		.text(function(d) {return d.name});
 
 	force.on('tick', function(){
 		edge.attr('x1', function(d) { return d.source.x; })
@@ -81,7 +150,35 @@ d3.json("./data/d3_graph.json", function( err, data){
 			.attr("cy", function(d) { return d.y; });
 	});
 
-});
+	function highlight(d){
+		// If clicked is false
+		if (d.type == 'student'){
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return i;
+
+					var out = d.Courses.indexOf(b.key) > 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(1000)
+				.style('fill', "fff")
+				.style('opacity', "1");
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return null;
+
+					var out = d.Courses.indexOf(b.key) < 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(1000)
+				.style('opacity', "0.1");
+		}else{
+			//implement!
+		}
+	}
+}
 </script>
 </body>
 </html>
