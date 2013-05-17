@@ -23,6 +23,7 @@ _Features_:
 
 ##TODO:
  - Upload on server
+ - Fix the fact that pan/zoom doesn't work when zoomed too out
  - Finish mouseover stuff
  - Add basic onclicked stuff
  - Add color coding legend!
