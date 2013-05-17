@@ -28,3 +28,5 @@ _Features_:
  - Add basic onclicked stuff
  - Add color coding legend!
  - Implement search filtering
+ - Fix Alex Hernandex glitch
+ - Improve distance metric
