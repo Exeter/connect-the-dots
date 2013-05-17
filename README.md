@@ -27,6 +27,9 @@ _Features_:
  - Finish mouseover stuff
  - Add basic onclicked stuff
  - Add color coding legend!
- - Implement search filtering
+ - Implement searching for course, person, etc.
+ - Implement filtering (music lessons out, sports out, etc.)
+ - Implement multiselections
+ - Implement other colorings and force linkings(dorm, state/country, etc.)
  - Fix Alex Hernandex glitch
  - Improve distance metric
