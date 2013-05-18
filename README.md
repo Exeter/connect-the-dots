@@ -19,12 +19,10 @@ __Edges__: member of/class for
 
 _Features_:
  - Filterable by subject, by teacher, by person, by dorm, etc...
- - Graph locking feature
-
 ##TODO:
  - Upload on server
  - Fix the fact that pan/zoom doesn't work when zoomed too out
- - Finish mouseover stuff
+ - Make mouseover stuff show text
  - Add basic onclicked stuff
  - Add color coding legend!
  - Implement searching for course, person, etc.

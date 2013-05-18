@@ -4,9 +4,14 @@
 <style type="text/css">
 body {
 	margin: 0px;
+	background-color: #000000;
 }
 .graph {
-	background-color: #252726;
+//	background-color: #252726;
+	background-color: #000000;
+}
+.legend {
+	position: absolute;
 }
 .nodetext{
 	color: #fff;
@@ -27,6 +32,7 @@ var h  = document.body.clientHeight;
 
 indexof = {};
 data = {};
+d3.select('body')
 
 d3.json("./data/graphdata.json", function(err, info){
 	if (err) return console.warn(err);
@@ -46,6 +52,7 @@ d3.json("./data/graphdata.json", function(err, info){
 	}
 	for (coursename in info.courses){
 		var course = info.courses[coursename];
+		if (course['subject'] == 'pec') continue;
 		course['key'] = coursename;
 		course['type'] = 'course';
 		data['nodes'].push(course);
@@ -57,6 +64,8 @@ d3.json("./data/graphdata.json", function(err, info){
 	data['edges'] = [];
 	for (coursename in info.courses){
 		var course = info.courses[coursename]
+		if (course['subject'] == 'pec') continue;
+		if (course['subject'] == 'mus') continue;
 		for ( i in course['members']){
 			edge = {};
 			edge = {'source': indexof[coursename], 'target': indexof[course['members'][i]]};
@@ -132,7 +141,7 @@ function visualize(){
 				return d.type =='student' ? color_code("Grade")[d.Grade]: "#000";
 			})
 			.style('opacity', function(d){
-				return d.type =='student' ? 1: 0.2;
+				return d.type =='student' ? 1: 0.8;
 				
 			});
 	};
@@ -157,7 +166,7 @@ function visualize(){
 				.filter(function(b, i){
 					if (b.key == d.key) return i;
 
-					var out = d.Courses.indexOf(b.key) > 0 ? i : null;
+					var out = d.Courses.indexOf(b.key) >= 0 ? i : null;
 					return out;
 				})
 				.transition()
@@ -175,7 +184,27 @@ function visualize(){
 				.duration(1000)
 				.style('opacity', "0.1");
 		}else{
-			//implement!
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return i;
+
+					var out = d.members.indexOf(b.key) >= 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(1000)
+				.style('fill', "fff")
+				.style('opacity', "1");
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return null;
+
+					var out = d.members.indexOf(b.key) < 0 ? i : null;
+					return out
+				})
+				.transition()
+				.duration(1000)
+				.style('opacity', "0.1");
 		}
 	}
 }
