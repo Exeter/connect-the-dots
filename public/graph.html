@@ -61,7 +61,7 @@ $(document).ready(function(){
 	data = {};
 	var svg;
 
-	d3.json("./data/graphdata.json", function(err, info){
+	d3.json("./graphdata.json", function(err, info){
 		if (err) return console.warn(err);
 
 		data['nodes'] = []
