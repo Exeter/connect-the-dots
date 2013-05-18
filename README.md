@@ -21,13 +21,16 @@ _Features_:
  - Filterable by subject, by teacher, by person, by dorm, etc...
 ##TODO:
  - Upload on server
+ - Add timestamp for data collection
+ - Add license
  - Fix the fact that pan/zoom doesn't work when zoomed too out
  - Make mouseover stuff show text
  - Add basic onclicked stuff
  - Add color coding legend!
- - Implement searching for course, person, etc.
- - Implement filtering (music lessons out, sports out, etc.)
+ - extend searching for multiselections, etc.
+ - UI element for filtering (music lessons out, sports out, etc.)
  - Implement multiselections
  - Implement other colorings and force linkings(dorm, state/country, etc.)
  - Fix Alex Hernandex glitch
  - Improve distance metric
+ - Make faster

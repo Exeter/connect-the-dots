@@ -1,0 +1,270 @@
+<html>
+<head>
+<title>Graph visualization</title>
+<style type="text/css">
+body {
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	font-family: Monaco, "DejaVu Sans Mono", "Lucida Console", monospace;
+	font-size: 10px;
+	background-color: #000000;
+}
+#bar {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 200px;
+	z-index: 1;
+}
+#graph {
+	position: fixed;
+	top: 0; left: 0;
+	height: 100%;
+	width: 100%;
+	background-color: #000000;
+}
+.box {
+	padding: 5px;
+	background-color: #252726;
+	box-shadow: 2px 2px 1px #000;
+	color: white;
+}
+.legend {
+	position: absolute;
+}
+.nodetext{
+	color: #fff;
+}
+
+.edge {
+	stroke: #999;
+	stroke-width: 1px;
+	stroke-opacity: .2;
+}
+</style>
+</head>
+<body>
+<script src="./d3.v3.min.js"></script>
+<script src="./jquery-1.9.1.min.js"></script>
+<div id="bar" class="box">
+	<form onsubmit="return false">
+		Search:<input type="text" id="search">
+	</form>
+</div>
+<script>
+$(document).ready(function(){
+	var w = document.body.clientWidth;
+	var h  = document.body.clientHeight;
+
+	indexof = {};
+	data = {};
+	var svg;
+
+	d3.json("./data/graphdata.json", function(err, info){
+		if (err) return console.warn(err);
+
+		data['nodes'] = []
+
+		var filterstatus = {
+		// 	category: is filtered out
+			'mus': true,
+			'pec': true,
+		}
+		function dontwantcourse(course){
+			if (course['subject'] == 'pec') return filterstatus['pec'];
+			if (course['subject'] == 'mus') return filterstatus['mus'];
+			return false;
+		}
+
+		var index = 0;
+		for (username in info.students){
+			var student  = info.students[username];
+			student['name'] = student.FirstName + ' ' + student.LastName;
+			student['key'] = username;
+			student['type'] = 'student';
+			data['nodes'].push(student);
+
+			indexof[username] = index;
+			index += 1;
+		}
+		for (coursename in info.courses){
+			var course = info.courses[coursename];
+			if (dontwantcourse(course)) continue;
+			course['key'] = coursename;
+			course['type'] = 'course';
+			data['nodes'].push(course);
+
+			indexof[coursename] = index;
+			index += 1;
+		}
+
+		data['edges'] = [];
+		for (coursename in info.courses){
+			var course = info.courses[coursename]
+			if (dontwantcourse(course)) continue;
+			for ( i in course['members']){
+				edge = {};
+				edge = {'source': indexof[coursename], 'target': indexof[course['members'][i]]};
+				data['edges'].push(edge);
+			}
+		}
+		svg = d3.select('body').append('svg')
+			.attr("id", 'graph')
+			.attr("width", w)
+			.attr("height", h)
+			.attr("pointer-events", "all")
+			.append('g')
+			.call(d3.behavior.zoom()
+				.scaleExtent([0.20,5])
+				.on("zoom", zoomed))
+			.append('g');
+		function zoomed() {
+			svg.attr("transform",
+			"translate(" + d3.event.translate + ")"
+			+ " scale(" + d3.event.scale + ")");
+		}
+		visualize();
+
+	});
+
+	var color_code = function(category){
+		this.Grade = {
+			'9': '#46aede',
+			'10': '#94e76b',
+			'11': '#ffac18',
+			'12': '#e32c57'
+		}
+		return this[category];
+	}
+
+	function visualize(){
+		var force = d3.layout.force()
+			.gravity(1)
+			.charge(-400)
+			.linkDistance(1)
+			.friction(0.95)
+			.alpha(10)
+			.size([w, h]);
+
+		force
+			.nodes(data.nodes)
+			.links(data.edges)
+			.start();
+
+		var edge = svg.selectAll('.edge')
+			.data(data.edges)
+			.enter().append('line')
+			.attr('class', 'edge')
+			.style('stroke-width', 1);
+		var node = svg.selectAll('.node')
+			.data(data.nodes)
+			.enter().append('circle')
+			.attr('class', function(d){
+				return d.type =='student' ? 'node student': 'node class';
+			})
+			.attr('r', function(d){
+				return d.type =='student' ? 3: 5;
+			})
+			.on("mouseover", highlight)
+			.on("mouseout", nohighlight);
+
+		nohighlight();
+		node.append("title")
+			.text(function(d) {return d.name});
+
+		force.on('tick', function(){
+			edge.attr('x1', function(d) { return d.source.x; })
+				.attr('y1', function(d) { return d.source.y; })
+				.attr("x2", function(d) { return d.target.x; })
+				.attr("y2", function(d) { return d.target.y; });
+			node.attr('cx', function(d) { return d.x; })
+				.attr("cy", function(d) { return d.y; });
+		});
+
+	}
+	function nohighlight(){
+		// If clicked is false
+		d3.selectAll('.node')
+			.transition()
+			.duration(750)
+			.style('fill', function(d){
+				return d.type =='student' ? color_code("Grade")[d.Grade]: "#000";
+			})
+			.style('opacity', function(d){
+				return d.type =='student' ? 1: 0.8;
+				
+			});
+	}
+	function highlight(d){
+		// If clicked is false
+		if (d.type == 'student'){
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return i;
+
+					var out = d.Courses.indexOf(b.key) >= 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(750)
+				.style('fill', "fff")
+				.style('opacity', "1");
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return null;
+
+					var out = d.Courses.indexOf(b.key) < 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(750)
+				.style('opacity', "0.1");
+		}else{
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return i;
+
+					var out = d.members.indexOf(b.key) >= 0 ? i : null;
+					return out;
+				})
+				.transition()
+				.duration(750)
+				.style('fill', "fff")
+				.style('opacity', "1");
+			d3.selectAll('.node')
+				.filter(function(b, i){
+					if (b.key == d.key) return null;
+
+					var out = d.members.indexOf(b.key) < 0 ? i : null;
+					return out
+				})
+				.transition()
+				.duration(750)
+				.style('opacity', "0.1");
+		}
+	}
+	var timeout;
+	$("#search").keyup(function() {
+		var query = $(this).val();
+		window.clearTimeout(timeout);
+		timeout = setTimeout(function(){
+			console.log(query);
+			d3.selectAll('.node')
+				.filter(function(b,i) {
+					if (b.key == query) return i;
+					return null;
+				})
+				.each(function(b, i) {
+					highlight(b);
+				});
+
+		}, 1000);
+
+
+		
+	});
+});
+</script>
+</body>
+</html>
