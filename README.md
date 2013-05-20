@@ -1,29 +1,30 @@
-#connect-the-dots
+#Exeter Connected
 
 Fun with Exeter Connect Data.
 
-##Goal:
-Force directed graph 
+[Only accessible on the PEA subnet](http://ecc.chickenkiller.com/connected)
 
-Current implementation uses d3.js.
+<br>
+<br>
 
-##Details:
-__Nodes__: Students and Courses
-__Edges__: member of/class for
+##Future:
+Do some network science investigations, eg.
+ - Average shortest path length (degrees of separation)
+ - Clustering coefficient
 
 ##TODO:
- - Upload on server
- - Add website to README
  - Add timestamp for data collection
  - Add license
  - Fix the fact that pan/zoom doesn't work when zoomed too out
- - Make mouseover stuff show text
+ - Make highlight show text
  - Add basic onclicked stuff
  - Add color coding legend!
  - extend searching for multiselections, etc.
  - UI element for filtering (music lessons out, sports out, etc.)
- - Implement multiselections
- - Implement other colorings and force linkings(dorm, state/country, etc.)
+ - clicks instead of mouseovers
+ - Implement Greeting screen
+ - Implement other colorings and edges(dorm, state/country, course instead of class+format, etc.)
+ - Make more constellation-like with edge highlighting
  - Fix Alex Hernandex glitch
  - Improve distance metric
  - Make faster
