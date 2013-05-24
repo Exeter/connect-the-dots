@@ -16,7 +16,7 @@ body {
 	right: 0;
 	width: 200px;
 	display: inline;
-	z-index: 1;
+	z-index: 2;
 }
 #graph {
 	position: fixed;
@@ -40,8 +40,12 @@ body {
 
 .edge {
 	stroke: #999;
-	stroke-width: 1px;
+	stroke-width: 1;
 	stroke-opacity: .2;
+	z-index: 1;
+}
+.node {
+	z-index: 0;
 }
 </style>
 </head>
@@ -54,10 +58,8 @@ body {
 	</form>
 </div>
 <script>
-$(document).ready(function(){
-	var w = document.body.clientWidth;
-	var h  = document.body.clientHeight;
 
+$(document).ready(function(){
 	indexof = {};
 	data = {};
 	var svg;
@@ -65,10 +67,12 @@ $(document).ready(function(){
 	d3.json("./graphdata.json", function(err, info){
 		if (err) return console.warn(err);
 
-		data['nodes'] = []
+		/* Data Preparation */
+
+		data['nodes'] = [];
 
 		var filterstatus = {
-		// 	category: is filtered out
+		// 	'category': (is filtered out)
 			'mus': true,
 			'pec': true,
 		}
@@ -78,42 +82,55 @@ $(document).ready(function(){
 			return false;
 		}
 
-		var index = 0;
+		var nodeindex = 0;
+		/* init student nodes */
 		for (username in info.students){
 			var student  = info.students[username];
 			student['name'] = student.FirstName + ' ' + student.LastName;
-			student['key'] = username;
 			student['type'] = 'student';
+			var neighbors = [];
+			if ('Courses' in student){
+				for (i in student['Courses']){
+					var course = student['Courses'][i];
+					course = course.substring(course.lastIndexOf("/") + 1);
+					neighbors.push(course);
+				}
+			}
+			student['neighbors'] = neighbors;
+
 			data['nodes'].push(student);
 
-			indexof[username] = index;
-			index += 1;
+			indexof[student['key']] = nodeindex;
+			nodeindex += 1;
 		}
+		/* init course nodes */
 		for (coursename in info.courses){
 			var course = info.courses[coursename];
 			if (dontwantcourse(course)) continue;
-			course['key'] = coursename;
-			course['type'] = 'course';
+			course['neighbors'] = course['members'];
+			course['type'] = 'course'; //type? nodetype? as a css attr?
 			data['nodes'].push(course);
 
-			indexof[coursename] = index;
-			index += 1;
+			indexof[course['key']] = nodeindex;
+			nodeindex += 1;
 		}
 
+		/* init edges */
 		data['edges'] = [];
 		for (coursename in info.courses){
 			var course = info.courses[coursename]
 			if (dontwantcourse(course)) continue;
-			for ( i in course['members']){
+			for ( i in course['neighbors']){
 				edge = {};
-				edge = {'source': indexof[coursename], 'target': indexof[course['members'][i]]};
+				edge = {'source': indexof[course['key']], 'target': indexof[course['neighbors'][i]]};
+				edge['nodes'] = [course['key'], course['neighbors'][i]];
 				data['edges'].push(edge);
 			}
 		}
 		svg = d3.select('body').append('svg')
 			.attr("id", 'graph')
-			.attr("width", w)
-			.attr("height", h)
+			.attr("width", document.body.clientWidth)
+			.attr("height", document.body.clientHeight)
 			.attr("pointer-events", "all")
 			.append('g')
 			.call(d3.behavior.zoom()
@@ -139,6 +156,7 @@ $(document).ready(function(){
 		return this[category];
 	}
 
+	/* Visualization */
 	function visualize(){
 		var force = d3.layout.force()
 			.gravity(1)
@@ -146,7 +164,7 @@ $(document).ready(function(){
 			.linkDistance(1)
 			.friction(0.95)
 			.alpha(10)
-			.size([w, h]);
+			.size([document.body.clientWidth, document.body.clientHeight]);
 
 		force
 			.nodes(data.nodes)
@@ -156,21 +174,35 @@ $(document).ready(function(){
 		var edge = svg.selectAll('.edge')
 			.data(data.edges)
 			.enter().append('line')
-			.attr('class', 'edge')
-			.style('stroke-width', 1);
+			.attr('highlighted', false)
+			.attr('class', function(d){
+			     return ['edge', d.nodes[0], d.nodes[1]].join(' ');
+			});
 		var node = svg.selectAll('.node')
 			.data(data.nodes)
 			.enter().append('circle')
-			.attr('class', function(d){
-				return d.type =='student' ? 'node student': 'node class';
+			.attr('highlighted', false)
+			.attr('id', function(d){
+				return d.key;
 			})
-			.attr('r', function(d){
-				return d.type =='student' ? 3: 5;
+			.attr('class', function(d){
+				var classes = [];
+				if ('neighbors' in d) classes = d.neighbors;
+				classes.push('node');
+				return classes.join(' ');
+			})
+			.attr('nodetype', function(d){
+				return d.type;
 			})
 			.on("mouseover", highlight)
-			.on("mouseout", nohighlight);
+			.on("mouseout", resethighlight);
+		svg.selectAll('[nodetype=student]')
+			.attr('r', 3);
+		svg.selectAll('[nodetype=course]')
+			.attr('r', 5);
+			
 
-		nohighlight();
+		resethighlight();
 		node.append("title")
 			.text(function(d) {return d.name});
 
@@ -184,66 +216,40 @@ $(document).ready(function(){
 		});
 
 	}
-	function nohighlight(){
-		// If clicked is false
-		d3.selectAll('.node')
+	function resethighlight(){
+		d3.selectAll('.edge[highlighted=true]')
+			.attr('highlighted', false)
 			.transition()
-			.duration(750)
+			.duration(1000)
+			.style('stroke-opacity', '.2');
+		d3.selectAll('[nodetype=course]')
+			.attr('highlighted', false)
+			.transition()
+			.duration(1000)
+			.style('fill', '#000')
+			.style('opacity', 0.8);
+		d3.selectAll('[nodetype=student]')
+			.attr('highlighted', false)
+			.transition()
+			.duration(1000)
 			.style('fill', function(d){
-				return d.type =='student' ? color_code("Grade")[d.Grade]: "#000";
+				return color_code("Grade")[d.Grade];
 			})
-			.style('opacity', function(d){
-				return d.type =='student' ? 1: 0.8;
-				
-			});
+			.style('opacity', 1);
 	}
 	function highlight(d){
-		// If clicked is false
-		if (d.type == 'student'){
-			d3.selectAll('.node')
-				.filter(function(b, i){
-					if (b.key == d.key) return i;
-
-					var out = d.Courses.indexOf(b.key) >= 0 ? i : null;
-					return out;
-				})
-				.transition()
-				.duration(750)
-				.style('fill', "fff")
-				.style('opacity', "1");
-			d3.selectAll('.node')
-				.filter(function(b, i){
-					if (b.key == d.key) return null;
-
-					var out = d.Courses.indexOf(b.key) < 0 ? i : null;
-					return out;
-				})
-				.transition()
-				.duration(750)
-				.style('opacity', "0.1");
-		}else{
-			d3.selectAll('.node')
-				.filter(function(b, i){
-					if (b.key == d.key) return i;
-
-					var out = d.members.indexOf(b.key) >= 0 ? i : null;
-					return out;
-				})
-				.transition()
-				.duration(750)
-				.style('fill', "fff")
-				.style('opacity', "1");
-			d3.selectAll('.node')
-				.filter(function(b, i){
-					if (b.key == d.key) return null;
-
-					var out = d.members.indexOf(b.key) < 0 ? i : null;
-					return out
-				})
-				.transition()
-				.duration(750)
-				.style('opacity', "0.1");
-		}
+		d3.selectAll('.' + d.key + ', #' + d.key)
+			.attr('highlighted', true)
+			.transition()
+			.duration(750)
+			.style('fill', "fff")
+			.style('opacity', "1")
+			.style('stroke-opacity', "1");
+		d3.selectAll('.node[highlighted=false]')
+			.attr('highlighted', true)
+			.transition()
+			.duration(750)
+			.style('opacity', "0.1");
 	}
 	var timeout;
 	$("#search").keyup(function() {

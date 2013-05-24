@@ -8,6 +8,8 @@ people = json.loads(open('data/master.json').read())
 
 #Generates dicts
 students = dict((k, v) for k, v in people.items() if 'Grade' in v.keys())
+for k,v in students.items():
+	v['key'] = k
 teachers = dict((k, v) for k, v in people.items() if (k not in students.keys()) and ('Courses' in v.keys()))
 
 
@@ -25,10 +27,11 @@ for name, student in students.items():
 
 				courses[course] = {'members': [], 'teacher': None}
 				courses[course]['name'] = course[course.index(' ') + 1:re.search(r'[*(]',course).start()].strip()
+				courses[course]['title'] = course;
 				courses[course]['subject'] = info[0]
 				courses[course]['code'] = info[1]
 				courses[course]['formats'] = list(filter(lambda x: x in string.ascii_letters, info[2]))
-				courses[course]['id'] = '-'.join(info)
+				courses[course]['key'] = '-'.join(info)
 			courses[course]['members'].append(name)
 #Adds teachers to courses
 for name, teacher in teachers.items():
@@ -69,7 +72,7 @@ def generate_data():
 	
 	output['student_index_of'] = dict(((v['UserName'], k) for k,v in enumerate(output['students'])))
 	"""
-	output['students'] = courses
+	output['students'] = students
 	output['courses'] = courses
 	
 	return output

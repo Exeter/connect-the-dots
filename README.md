@@ -15,16 +15,15 @@ Do some network science investigations, eg.
  - Search
 	- Add auto dropdown menu with tab completion, entries with category (class, name, state, etc.)
  - Multiselection
+ 	- Start by abstrating out node selections with highlights
  	- Implement Wolfram Alpha-like comparison for multiple selections
  	- Implement graph node lassoing selections
 	- Implement categorical(vs nodal) search selections
  - Visualization
- 	- Remove mouseover, replace with mouseclick
+ 	- make doublemouseclick into selection lock/popup window with more info
 	- successive mouseclicks for incremental subgraph dilation
 	- Fix the fact that pan/zoom doesn't work when zoomed too out
 	- Make highlights show text
- 	- Make more constellation-like with edge highlighting
- 	- Fix Alex Hernandex glitch
  	- Improve distance metric
  	- Make faster
  - Web (Keep GUI simple!)
@@ -32,6 +31,7 @@ Do some network science investigations, eg.
 	- Add welcome screen with dimmed background and basic guide
 		- add dimmed background
 		- basic operation guide
+		- Data last updated
 		- UI elements for filtering/edge type
 	- Add revisualize button
 	- Add loading circle animation for data transfer
@@ -39,8 +39,9 @@ Do some network science investigations, eg.
 	- Add timestamp for data collection
 	- Smoothly integrate/chain Exeter Connect scraper with graph data generator
 	- Improve Connect scraper to update profiles in database dynamically, instead of all at once.
-	- Write update scripts
  - Other
 	- Add license (or not lol)
 	- Separate JS from html (so github knows that the majority of the graph is in JS)
 	- Think about whether the JSON should be on github...
+	- What do I do with jquery and d3 libraries? (for github...)
+	- Think about non-exeter hosting
