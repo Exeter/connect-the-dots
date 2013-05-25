@@ -58,7 +58,8 @@ __bold__ : next task
 	- Improve Connect scraper to update profiles in database dynamically, instead of all at once.
  - Other
 	- Add license (or not lol)
-	- Seperate JS and css from html
+	- _Seperate JS and css from html_
+	- _Revive Chickenkiller!_
 	- Think about whether the JSON should be on github...
 	- What do I do with jquery and d3 libraries? (for github...)
 	- Think about non-exeter hosting
