@@ -11,6 +11,8 @@ Do some network science investigations, eg.
  - Average shortest path length (degrees of separation)
  - Clustering coefficient
 
+I wonder if any of this could help with scheduling....
+
 
 
 ##TODO:
@@ -37,31 +39,26 @@ __bold__ : next task
  	- Implement Wolfram Alpha-like comparison for multiple selections
 	- Implement categorical(vs nodal) search selections
  - Visualization
+ 	- Maybe have predetermined x, y coordinates
  	- make doublemouseclick into selection lock/popup window with more info
 	- make mouseclick on map deselect
 	- successive mouseclicks for incremental subgraph dilation
-	- Fix the fact that pan/zoom doesn't work when zoomed too out
-	- Make highlights show text
+	- __Make highlights show text__
  	- Improve distance metric
- 	- Make faster
-		- Look into d3.js force algorithm, see if can be improved upon
  - Web (Keep GUI simple!)
- 	- __Add Color coding legend!__
-	- Add welcome screen with dimmed background and basic guide
-		- add dimmed background
-		- basic operation guide
+ 	- To Welcome screen...
 		- Data last updated
 		- UI elements for filtering/edge type
 	- Add revisualize button
 	- Add loading circle animation for data transfer
-	- Add about text in bottom right corner
+	- Add about text in bottom right corner in grey
  - Data
 	- Add timestamp for data collection
 	- Smoothly integrate/chain Exeter Connect scraper with graph data generator
 	- Improve Connect scraper to update profiles in database dynamically, instead of all at once.
  - Other
 	- Add license (or not lol)
-	- Separate JS from html (so github knows that the majority of the graph is in JS)
+	- Seperate JS and css from html
 	- Think about whether the JSON should be on github...
 	- What do I do with jquery and d3 libraries? (for github...)
 	- Think about non-exeter hosting

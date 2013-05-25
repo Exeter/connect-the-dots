@@ -2,22 +2,79 @@
 <head>
 <title>Graph visualization</title>
 <style type="text/css">
+
 body {
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
-	font-family: Monaco, "DejaVu Sans Mono", "Lucida Console", monospace;
+	font-family: Verdana, Geneva Arial, Helvetica, sans-serif;
 	font-size: 10px;
+	color: #ffffff;
 	background-color: #000000;
 }
 #bar {
-	position: absolute;
+	position: fixed;
 	top: 0;
 	right: 0;
-	width: 200px;
-	display: inline;
 	z-index: 2;
 }
+.box {
+	padding: 5px;
+	background-color: rgba(0, 0, 0, 0.8);
+}
+/* Welcome Screen */
+#welcome {
+	position: fixed;
+	top: 0; left: 0;
+	height: 100%;
+	width: 100%;
+	text-align: center;
+	background-color: #000000;
+	z-index: 3;
+}
+#welcome #vertical {
+	position: absolute;
+	top: 20%;
+	left: 0;
+	width: 100%;
+}
+#welcome #horizontal {
+	position: relative;
+	width: 20%;
+	height: 10%;
+	margin: 0 auto;
+
+	//background: #252726;
+	padding: 2%;
+}
+#horizontal div{
+	margin: 3em 0;
+}
+
+
+#title {
+	text-align: center;
+}
+#progress {
+	font-family: Monaco, "DejaVu Sans Mono", "Lucida Console", monospace;
+	white-space: pre;
+}
+#version {
+	position: fixed:
+	margin-top: 5em;
+	bottom: 0;
+	right: 0;
+	text-align: right;
+}
+#now {
+	font-style: italic;
+}
+#legend {
+	padding: 5px;
+}
+
+/* Graph */
+
 #graph {
 	position: fixed;
 	top: 0; left: 0;
@@ -25,15 +82,7 @@ body {
 	width: 100%;
 	background-color: #000000;
 }
-.box {
-	padding: 5px;
-	background-color: #252726;
-	box-shadow: 2px 2px 1px #000;
-	color: white;
-}
-.legend {
-	position: absolute;
-}
+
 .nodetext{
 	color: #fff;
 }
@@ -57,13 +106,98 @@ body {
 		Search:<input type="text" id="search">
 	</form>
 </div>
+
+<div id="welcome">
+	<div id="vertical">
+		<div id="horizontal">
+			<div id="title">Exeter Connected</div>
+			<div>
+			An interactive visualization and exploration of the Phillips Exeter Academy Community
+			</div>
+			<div id="progress">[                                         ]</div>
+			<br>
+			<br>
+			<span id="now">
+				[click here see it now...]
+			</span>
+			<div id="version">v0.03</div>
+		</div>
+	</div>
+</div>
 <script>
+var colorschemes = {
+	'Grade' : {
+		'9': '#46aede',
+		'10': '#94e76b',
+		'11': '#ffac18',
+		'12': '#e32c57'
+	}
+}
+var currentcolorscheme = colorschemes.Grade;
+function populatelegend(){
+	var dataset = [];
+	for (k in currentcolorscheme){
+		dataset.push({'k' : k, 'v' : currentcolorscheme[k]});
+	}
+	var keydict = {
+		'9': 'Prep',
+		'10': 'Lower',
+		'11': 'Upper',
+		'12': 'Senior',
+	}
+	d3.select("#legend").selectAll('div')
+		.data(dataset)
+		.enter()
+		.append("div")
+		.html(function(d){
+			return '&nbsp;<font color="' + d.v + '">' + '&#x25A0;</font> ' + keydict[d.k];
+		});
+
+}
+
+var welcomescreen = new function(){
+	var prevdots;
+	this.updateprogress = function(alpha){
+		var dots = 21 - Math.round(alpha/0.005);
+		var str = "[ "
+		if(dots != prevdots){
+			prevdots = dots;
+			var arr = [];
+			for (var i = 0; i< 20; i = i + 1){
+				if (i < dots){
+					arr.push('.');
+				}else{
+					arr.push(' ');
+				}
+			}
+			str += arr.join(' ') + ' ]';
+			$('#progress').text(str);
+		}
+
+
+	};
+
+	this.startvis = function(){
+		$parent = $('#welcome');
+		$('#horizontal').fadeOut(1000, function(){
+			graphscreen.visualize();
+			$parent.fadeOut(3000, function(){
+				$parent.remove();
+			});
+		});
+	};
+
+}
+
+
+indexof = {};
+data = {};
+var svg;
+var force;
 
 $(document).ready(function(){
-	indexof = {};
-	data = {};
-	var svg;
-
+	//populatelegend();
+	
 	d3.json("./graphdata.json", function(err, info){
 		if (err) return console.warn(err);
 
@@ -74,11 +208,16 @@ $(document).ready(function(){
 		var filterstatus = {
 		// 	'category': (is filtered out)
 			'mus': true,
+			'art': false,
 			'pec': true,
+			'dan': true,
 		}
 		function dontwantcourse(course){
 			if (course['subject'] == 'pec') return filterstatus['pec'];
+			if (course['subject'] == 'art') return filterstatus['art'];
 			if (course['subject'] == 'mus') return filterstatus['mus'];
+			if (course['subject'] == 'dan') return filterstatus['dan'];
+			//if (course['teacher'] != 'bsea') return true;
 			return false;
 		}
 
@@ -129,36 +268,34 @@ $(document).ready(function(){
 		}
 		svg = d3.select('body').append('svg')
 			.attr("id", 'graph')
+			.attr("viewBox", "0 0 " + document.body.clientWidth + " " + document.body.clientHeight )
+			.attr("preserveAspectRatio", "xMidYMid meet")
 			.attr("width", document.body.clientWidth)
 			.attr("height", document.body.clientHeight)
 			.attr("pointer-events", "all")
 			.append('g')
 			.call(d3.behavior.zoom()
-				.scaleExtent([0.20,5])
+				.scaleExtent([0.2,5])
 				.on("zoom", zoomed))
 			.append('g');
+
 		function zoomed() {
-			svg.attr("transform",
+			svg
+				.attr("transform",
 			"translate(" + d3.event.translate + ")"
 			+ " scale(" + d3.event.scale + ")");
 		}
-		visualize();
 
-	});
+		svg.attr('transform', "translate(" + document.body.clientWidth/2.5 + ", " + document.body.clientHeight/2.5 + ") scale(0.2)"); //zoom out
+		svg.append('rect')
+			.attr('width', document.body.clientWidth)
+			.attr('height', document.body.clientHeight)
+			.attr('fill', 'black')
+			.style('stroke-width', '2px')
+			.style('stroke', 'white')
+			.attr('transform', "translate(-" + document.body.clientWidth*8 + ", -" + document.body.clientHeight*8+ ") scale(20)"); //zoom out
 
-	var color_code = function(category){
-		this.Grade = {
-			'9': '#46aede',
-			'10': '#94e76b',
-			'11': '#ffac18',
-			'12': '#e32c57'
-		}
-		return this[category];
-	}
-
-	/* Visualization */
-	function visualize(){
-		var force = d3.layout.force()
+		force = d3.layout.force()
 			.gravity(1)
 			.charge(-400)
 			.linkDistance(1)
@@ -171,6 +308,45 @@ $(document).ready(function(){
 			.links(data.edges)
 			.start();
 
+		force.on('tick', function(){
+			welcomescreen.updateprogress(force.alpha());
+		});
+
+		force.on('end', function(){
+			welcomescreen.startvis();
+		});
+
+		$('#now').click(welcomescreen.startvis);
+
+	});
+
+	
+
+	/* Visualization */
+	var timeout;
+	$("#search").keyup(function() {
+		var query = $(this).val();
+		window.clearTimeout(timeout);
+		timeout = setTimeout(function(){
+			d3.selectAll('.node')
+				.filter(function(b,i) {
+					if (b.key == query) return i;
+					return null;
+				})
+				.each(function(b, i) {
+					graphscreen.highlight(b);
+				});
+
+		}, 1000);
+
+
+		
+	});
+});
+var graphscreen = new function(){
+	this.visualize = function(){
+		force.on('end', null);
+		force.tick();
 		var edge = svg.selectAll('.edge')
 			.data(data.edges)
 			.enter().append('line')
@@ -194,29 +370,31 @@ $(document).ready(function(){
 			.attr('nodetype', function(d){
 				return d.type;
 			})
-			.on("mouseover", highlight)
-			.on("mouseout", resethighlight);
+			.on("mouseover", this.highlight)
+			.on("mouseout", this.resethighlights);
 		svg.selectAll('[nodetype=student]')
 			.attr('r', 3);
 		svg.selectAll('[nodetype=course]')
 			.attr('r', 5);
-			
 
-		resethighlight();
+		this.resethighlights(); //default colorings
+
 		node.append("title")
 			.text(function(d) {return d.name});
 
-		force.on('tick', function(){
+		force.on('tick', ontick);
+		function ontick(){
 			edge.attr('x1', function(d) { return d.source.x; })
 				.attr('y1', function(d) { return d.source.y; })
 				.attr("x2", function(d) { return d.target.x; })
 				.attr("y2", function(d) { return d.target.y; });
 			node.attr('cx', function(d) { return d.x; })
 				.attr("cy", function(d) { return d.y; });
-		});
+		}
+		ontick(); //to run when visualized after alpha = 0
 
-	}
-	function resethighlight(){
+	};
+	this.resethighlights = function(){
 		d3.selectAll('.edge[highlighted=true]')
 			.attr('highlighted', false)
 			.transition()
@@ -233,11 +411,11 @@ $(document).ready(function(){
 			.transition()
 			.duration(1000)
 			.style('fill', function(d){
-				return color_code("Grade")[d.Grade];
+				return colorschemes.Grade[d.Grade];
 			})
 			.style('opacity', 1);
-	}
-	function highlight(d){
+	};
+	this.highlight = function(d){
 		d3.selectAll('.' + d.key + ', #' + d.key)
 			.attr('highlighted', true)
 			.transition()
@@ -250,28 +428,8 @@ $(document).ready(function(){
 			.transition()
 			.duration(750)
 			.style('opacity', "0.1");
-	}
-	var timeout;
-	$("#search").keyup(function() {
-		var query = $(this).val();
-		window.clearTimeout(timeout);
-		timeout = setTimeout(function(){
-			console.log(query);
-			d3.selectAll('.node')
-				.filter(function(b,i) {
-					if (b.key == query) return i;
-					return null;
-				})
-				.each(function(b, i) {
-					highlight(b);
-				});
-
-		}, 1000);
-
-
-		
-	});
-});
+	};
+}
 </script>
 </body>
 </html>
