@@ -1,10 +1,5 @@
 #Exeter Connected
-
-_...Just some fun with Exeter Connect Data_
-
-[Only accessible on the PEA subnet](http://ecc.chickenkiller.com/connected)
-
-Exeter Connected is an interactive visualization and exploration of the Phillips Exeter Academy community.
+[Exeter Connected](http://ecc.exeter.edu/connected) is an interactive visualization and exploration of the Phillips Exeter Academy community.
 
 ##Future:
 Do some network science investigations, eg.
@@ -58,8 +53,3 @@ __bold__ : next task
 	- Improve Connect scraper to update profiles in database dynamically, instead of all at once.
  - Other
 	- Add license (or not lol)
-	- _Seperate JS and css from html_
-	- _Revive Chickenkiller!_
-	- Think about whether the JSON should be on github...
-	- What do I do with jquery and d3 libraries? (for github...)
-	- Think about non-exeter hosting

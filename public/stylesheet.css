@@ -1,0 +1,94 @@
+body {
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	font-family: Verdana, Geneva Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #ffffff;
+	background-color: #000000;
+}
+#bar {
+	position: fixed;
+	top: 0;
+	right: 0;
+	z-index: 2;
+}
+.box {
+	padding: 5px;
+	background-color: rgba(0, 0, 0, 0.8);
+}
+/* Welcome Screen */
+#welcome {
+	position: fixed;
+	top: 0; left: 0;
+	height: 100%;
+	width: 100%;
+	text-align: center;
+	background-color: #000000;
+	z-index: 3;
+}
+#welcome #vertical {
+	position: absolute;
+	top: 20%;
+	left: 0;
+	width: 100%;
+}
+#welcome #horizontal {
+	position: relative;
+	width: 20%;
+	height: 10%;
+	margin: 0 auto;
+
+	//background: #252726;
+	padding: 2%;
+}
+#horizontal div{
+	margin: 3em 0;
+}
+
+
+#title {
+	text-align: center;
+}
+#progress {
+	font-family: Monaco, "DejaVu Sans Mono", "Lucida Console", monospace;
+	white-space: pre;
+}
+#version {
+	position: fixed:
+	margin-top: 5em;
+	bottom: 0;
+	right: 0;
+	text-align: right;
+}
+#now {
+	font-style: italic;
+}
+#legend {
+	padding: 5px;
+}
+
+/* Graph */
+
+#graph {
+	position: fixed;
+	top: 0; left: 0;
+	height: 100%;
+	width: 100%;
+	background-color: #000000;
+}
+
+.nodetext{
+	color: #fff;
+}
+
+.edge {
+	stroke: #999;
+	stroke-width: 1;
+	stroke-opacity: .2;
+	z-index: 1;
+}
+.node {
+	z-index: 0;
+}
+
