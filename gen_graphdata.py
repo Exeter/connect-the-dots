@@ -1,9 +1,8 @@
-from PEA import Users
-from PEA import Classes
+import PEA_connect
 import json
 
-classes = Classes.byFullString()
-users = Users.byUsername()
+classes = PEA_connect.classes()
+users = PEA_connect.users()
 
 #TEMPORARY student retrieval
 students = dict((k, v) for k, v in users.items() if 'SourceCode' in v.keys() and "ST" in v['SourceCode'].split(','))
