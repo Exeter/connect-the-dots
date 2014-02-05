@@ -240,9 +240,22 @@ var graphscreen = new function(){
 			     return ['edge', d.nodes[0], d.nodes[1]].join(' ');
 			})
 			.on('click', this.resethighlights);
-		var node = svg.selectAll('.node')
+		var gnode = svg.selectAll('g.gnode')
 			.data(data.nodes)
-			.enter().append('circle')
+			.enter()
+			.append('g')
+			.attr('id', function(d){
+				return 'gnode_' + d.key;
+			})
+			.attr('class', function(d){
+				var classes = [];
+				if ('neighbors' in d) classes = d.neighbors;
+				classes.push('node');
+				return "gnode_" + classes.join(' gnode_');
+			})
+			.classed('gnode', true);
+
+		var node = gnode.append('circle')
 			.attr('highlighted', false)
 			.attr('id', function(d){
 				return d.key;
@@ -260,6 +273,7 @@ var graphscreen = new function(){
 				graphscreen.resethighlights();
 				graphscreen.highlight(d);
 			});
+
 		svg.selectAll('#graph').on('click', this.resethighlights);
 		svg.selectAll('[nodetype=student]')
 			.attr('r', 3);
@@ -277,8 +291,9 @@ var graphscreen = new function(){
 				.attr('y1', function(d) { return d.source.y; })
 				.attr("x2", function(d) { return d.target.x; })
 				.attr("y2", function(d) { return d.target.y; });
-			node.attr('cx', function(d) { return d.x; })
-				.attr("cy", function(d) { return d.y; });
+			gnode.attr('transform', function(d) {
+				return 'translate(' + [d.x, d.y] + ')';
+			});
 		}
 		ontick(); //to run when visualized after alpha = 0
 
@@ -287,18 +302,18 @@ var graphscreen = new function(){
 	//along with phasing out jquery
 	this.resethighlights = function(){
 		console.log("highlights resettting!");
-		d3.selectAll('.edge[highlighted=true]')
+		svg.selectAll('.edge[highlighted=true]')
 			.attr('highlighted', false)
 			.transition()
 			.duration(1000)
 			.style('stroke-opacity', '.2');
-		d3.selectAll('[nodetype=class]')
+		svg.selectAll('[nodetype=class]')
 			.attr('highlighted', false)
 			.transition()
 			.duration(1000)
 			.style('fill', '#000')
 			.style('opacity', 0.8);
-		d3.selectAll('[nodetype=student]')
+		svg.selectAll('[nodetype=student]')
 			.attr('highlighted', false)
 			.transition()
 			.duration(1000)
@@ -306,10 +321,11 @@ var graphscreen = new function(){
 				return colorschemes.Grade[d.Grade];
 			})
 			.style('opacity', 1);
+		svg.selectAll('.gnode_text').remove();
 	};
 	this.highlight = function(d){
 		//neightborof?
-		d3.selectAll('#' + d.key)
+		svg.select('#' + d.key)
 			.attr('highlighted', true)
 			.transition()
 			.duration(750)
@@ -317,17 +333,33 @@ var graphscreen = new function(){
 			.style('opacity', "1")
 			.style('stroke-opacity', "1");
 
-		d3.selectAll('.' + d.key)
+		svg.selectAll('.' + d.key)
 			.attr('highlighted', true)
 			.transition()
 			.duration(750)
 			.style('fill', "ddd")
 			.style('opacity', "1")
 			.style('stroke-opacity', "1");
-		d3.selectAll('.node[highlighted=false]')
+		svg.selectAll('.node[highlighted=false]')
 			.attr('highlighted', true)
 			.transition()
 			.duration(750)
 			.style('opacity', "0.1");
+
+		svg.select('#' + 'gnode_' + d.key)		
+			.append('text')
+			.classed('gnode_text', true)
+			.attr('fill', "#cccccc")
+			.attr('font-weight', "bold")
+			.attr('dx', 5)
+			.attr('dy', 5)
+			.text(function(d) {return d.Name;});
+		svg.selectAll('.' + 'gnode_' + d.key)		
+			.append('text')
+			.classed('gnode_text', true)
+			.attr('fill', "#aaaaaa")
+			.attr('dx', 5)
+			.attr('dy', 5)
+			.text(function(d) {return d.Name;});
 	};
 }
