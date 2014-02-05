@@ -5,5 +5,5 @@
 
 
 ##Todo:
+ - Get searching working again
  - Make image/graphic for github
- - Get text popup to work
