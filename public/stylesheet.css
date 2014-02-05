@@ -7,16 +7,6 @@ body {
 	color: #ffffff;
 	background-color: #000000;
 }
-#bar {
-	position: fixed;
-	top: 0;
-	right: 0;
-	z-index: 2;
-}
-.box {
-	padding: 5px;
-	background-color: rgba(0, 0, 0, 0.8);
-}
 /* Welcome Screen */
 #welcome {
 	position: fixed;
@@ -64,9 +54,6 @@ body {
 #now {
 	font-style: italic;
 }
-#legend {
-	padding: 5px;
-}
 
 /* Graph */
 
@@ -90,5 +77,29 @@ body {
 }
 .node {
 	z-index: 0;
+}
+/* Gui */
+
+#bar {
+	top: 0;
+	right: 0;
+}
+#titlebox {
+	padding: 5px;
+	top: 0;
+	left: 0;
+}
+#legend {
+	padding: 5px;
+	padding-right: 20px;
+	bottom: 0;
+	left: 0;
+}
+
+.guibox {
+	position: fixed;
+	padding: 5px;
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: 2;
 }
 

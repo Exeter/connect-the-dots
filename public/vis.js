@@ -18,6 +18,7 @@ function populatelegend(){
 		'11': 'Upper',
 		'12': 'Senior',
 	}
+
 	d3.select("#legend").selectAll('div')
 		.data(dataset)
 		.enter()
@@ -68,162 +69,164 @@ data = {};
 var svg;
 var force;
 
-(function(){
-	//populatelegend();
-	
-	d3.json("./graphdata.json", function(err, info){
-		window.info = info;
-		if (err) return console.warn(err);
+/*
+ * STart vis
+ */
 
-		/* Data Preparation */
+populatelegend();
 
-		data['nodes'] = [];
+d3.json("./graphdata.json", function(err, info){
+	window.info = info;
+	if (err) return console.warn(err);
 
-		//TODO: Rename isfiltered
-		var filterstatus = {
-		// 	'category': (is filtered out)
-			'mus': true,
-			'art': false,
-			'pec': true,
-			'dan': true,
-		}
-		function dontwantcourse(course){
-			if (course['SubjectCode'] == 'pec') return filterstatus['pec'];
-			if (course['SubjectCode'] == 'art') return filterstatus['art'];
-			if (course['SubjectCode'] == 'mus') return filterstatus['mus'];
-			if (course['SubjectCode'] == 'dan') return filterstatus['dan'];
-			//if (course['teacher'] != 'bsea') return true;
-			return false;
-		}
+	/* Data Preparation */
 
-		var nodeindex = 0;
-		/* init student nodes */
-		for (username in info.students){
-			var student  = info.students[username];
-			student['Name'] = student.FirstName + ' ' + student.LastName;
-			student['type'] = 'student';
-			var neighbors = [];
-			if ('Courses' in student){
-				for (i in student['Courses']){
-					var course = student['Courses'][i];
-					neighbors.push(info.classes[course]['ClassCode']);
-				}
-			}
-			student['neighbors'] = neighbors;
-			student['key'] = student.Username;
+	data['nodes'] = [];
 
-			data['nodes'].push(student);
+	//TODO: Rename isfiltered
+	var filterstatus = {
+	// 	'category': (is filtered out)
+		'mus': true,
+		'art': false,
+		'pec': true,
+		'dan': true,
+	}
+	function dontwantcourse(course){
+		if (course['SubjectCode'] == 'pec') return filterstatus['pec'];
+		if (course['SubjectCode'] == 'art') return filterstatus['art'];
+		if (course['SubjectCode'] == 'mus') return filterstatus['mus'];
+		if (course['SubjectCode'] == 'dan') return filterstatus['dan'];
+		//if (course['teacher'] != 'bsea') return true;
+		return false;
+	}
 
-			indexof[student['Username']] = nodeindex;
-			nodeindex += 1;
-		}
-		/* init course nodes */
-		for (coursename in info.classes){
-			var course = info.classes[coursename];
-			if (dontwantcourse(course)) continue;
-			course['neighbors'] = course['Students'];
-			course['type'] = 'course'; //type? nodetype? as a css attr?
-			course['key'] = course.ClassCode;
-			data['nodes'].push(course);
-
-			indexof[course['ClassCode']] = nodeindex;
-			nodeindex += 1;
-		}
-
-		/* init edges */
-		console.log(indexof)
-		data['edges'] = [];
-		for (coursename in info.classes){
-			var course = info.classes[coursename]
-			if (dontwantcourse(course)) continue;
-			for ( i in course['neighbors']){
-				edge = {};
-				edge = {'source': indexof[course['ClassCode']], 'target': indexof[course['neighbors'][i]]};
-				edge['nodes'] = [course['ClassCode'], course['neighbors'][i]];
-				data['edges'].push(edge);
+	var nodeindex = 0;
+	/* init student nodes */
+	for (username in info.students){
+		var student  = info.students[username];
+		student['Name'] = student.FirstName + ' ' + student.LastName;
+		student['type'] = 'student';
+		var neighbors = [];
+		if ('Courses' in student){
+			for (i in student['Courses']){
+				var course = student['Courses'][i];
+				neighbors.push(info.classes[course]['ClassCode']);
 			}
 		}
-		console.log(data);//TESTING
-		svg = d3.select('body').append('svg')
-			.attr("id", 'graph')
-			.attr("viewBox", "0 0 " + document.body.clientWidth + " " + document.body.clientHeight )
-			.attr("preserveAspectRatio", "xMidYMid meet")
-			.attr("width", document.body.clientWidth)
-			.attr("height", document.body.clientHeight)
-			.attr("pointer-events", "all")
-			.append('g')
-			.call(d3.behavior.zoom()
-				.scaleExtent([0.2,5])
-				.on("zoom", zoomed))
-			.append('g');
+		student['neighbors'] = neighbors;
+		student['key'] = student.Username;
 
-		function zoomed() {
-			svg
-				.attr("transform",
-			"translate(" + d3.event.translate + ")"
-			+ " scale(" + d3.event.scale + ")");
+		data['nodes'].push(student);
+
+		indexof[student['Username']] = nodeindex;
+		nodeindex += 1;
+	}
+	/* init course nodes */
+	for (coursename in info.classes){
+		var course = info.classes[coursename];
+		if (dontwantcourse(course)) continue;
+		course['neighbors'] = course['Students'];
+		course['type'] = 'course'; //type? nodetype? as a css attr?
+		course['key'] = course.ClassCode;
+		data['nodes'].push(course);
+
+		indexof[course['ClassCode']] = nodeindex;
+		nodeindex += 1;
+	}
+
+	/* init edges */
+	console.log(indexof)
+	data['edges'] = [];
+	for (coursename in info.classes){
+		var course = info.classes[coursename]
+		if (dontwantcourse(course)) continue;
+		for ( i in course['neighbors']){
+			edge = {};
+			edge = {'source': indexof[course['ClassCode']], 'target': indexof[course['neighbors'][i]]};
+			edge['nodes'] = [course['ClassCode'], course['neighbors'][i]];
+			data['edges'].push(edge);
 		}
+	}
+	console.log(data);//TESTING
+	svg = d3.select('body').append('svg')
+		.attr("id", 'graph')
+		.attr("viewBox", "0 0 " + document.body.clientWidth + " " + document.body.clientHeight )
+		.attr("preserveAspectRatio", "xMidYMid meet")
+		.attr("width", document.body.clientWidth)
+		.attr("height", document.body.clientHeight)
+		.attr("pointer-events", "all")
+		.append('g')
+		.call(d3.behavior.zoom()
+			.scaleExtent([0.2,5])
+			.on("zoom", zoomed))
+		.append('g');
 
-		svg.attr('transform', "translate(" + document.body.clientWidth/2.5 + ", " + document.body.clientHeight/2.5 + ") scale(0.2)"); //zoom out
-		svg.append('rect')
-			.attr('width', document.body.clientWidth)
-			.attr('height', document.body.clientHeight)
-			.attr('fill', 'black')
-			.style('stroke-width', '2px')
-			.style('stroke', 'white')
-			.attr('transform', "translate(-" + document.body.clientWidth*8 + ", -" + document.body.clientHeight*8+ ") scale(20)"); //zoom out
+	function zoomed() {
+		svg
+			.attr("transform",
+		"translate(" + d3.event.translate + ")"
+		+ " scale(" + d3.event.scale + ")");
+	}
 
-		force = d3.layout.force()
-			.gravity(1)
-			.charge(-400)
-			.linkDistance(1)
-			.friction(0.95)
-			.alpha(10)
-			.size([document.body.clientWidth, document.body.clientHeight]);
+	svg.attr('transform', "translate(" + document.body.clientWidth/2.5 + ", " + document.body.clientHeight/2.5 + ") scale(0.2)"); //zoom out
+	svg.append('rect')
+		.attr('width', document.body.clientWidth)
+		.attr('height', document.body.clientHeight)
+		.attr('fill', 'black')
+		.style('stroke-width', '2px')
+		.style('stroke', 'white')
+		.attr('transform', "translate(-" + document.body.clientWidth*8 + ", -" + document.body.clientHeight*8+ ") scale(20)"); //zoom out
 
-		force
-			.nodes(data.nodes)
-			.links(data.edges)
-			.start();
+	force = d3.layout.force()
+		.gravity(1)
+		.charge(-400)
+		.linkDistance(1)
+		.friction(0.95)
+		.alpha(10)
+		.size([document.body.clientWidth, document.body.clientHeight]);
 
-		force.on('tick', function(){
-			welcomescreen.updateprogress(force.alpha());
-		});
+	force
+		.nodes(data.nodes)
+		.links(data.edges)
+		.start();
 
-		force.on('end', function(){
-			welcomescreen.startvis();
-		});
-
-		$('#now').click(welcomescreen.startvis);
-
+	force.on('tick', function(){
+		welcomescreen.updateprogress(force.alpha());
 	});
+
+	force.on('end', function(){
+		welcomescreen.startvis();
+	});
+
+	$('#now').click(welcomescreen.startvis);
+
+});
+
+
+
+/* Visualization */
+var timeout;
+$("#search").keyup(function() {
+	var query = $(this).val();
+	window.clearTimeout(timeout);
+	timeout = setTimeout(function(){
+		graphscreen.resethighlights();
+		d3.selectAll('.node')
+			.filter(function(b,i) {
+				if (b.key == query) return i; //username, ClassCode
+				if (b.SubjectCode == query) return i;
+				if (b.Teacher == query) return i;
+				return null;
+			})
+			.each(function(b, i) {
+				graphscreen.highlight(b);
+			});
+
+	}, 1000);
+
 
 	
-
-	/* Visualization */
-	var timeout;
-	$("#search").keyup(function() {
-		var query = $(this).val();
-		window.clearTimeout(timeout);
-		timeout = setTimeout(function(){
-			graphscreen.resethighlights();
-			d3.selectAll('.node')
-				.filter(function(b,i) {
-					if (b.key == query) return i; //username, ClassCode
-					if (b.SubjectCode == query) return i;
-					if (b.Teacher == query) return i;
-					return null;
-				})
-				.each(function(b, i) {
-					graphscreen.highlight(b);
-				});
-
-		}, 1000);
-
-
-		
-	});
-})();
+});
 var graphscreen = new function(){
 	this.visualize = function(){
 		force.on('end', null);
@@ -252,6 +255,7 @@ var graphscreen = new function(){
 				return d.type;
 			})
 			.on("mouseover", this.highlight)
+			.on("mouseclick", this.highlight) //TODO get from mouseover to mouseclick
 			.on("mouseout", this.resethighlights);
 		svg.selectAll('[nodetype=student]')
 			.attr('r', 3);
