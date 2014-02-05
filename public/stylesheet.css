@@ -76,7 +76,7 @@ body {
 	z-index: 1;
 }
 .node {
-	z-index: 0;
+	z-index: 2;
 }
 /* Gui */
 

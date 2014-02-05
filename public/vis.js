@@ -91,12 +91,12 @@ d3.json("./graphdata.json", function(err, info){
 		'pec': true,
 		'dan': true,
 	}
-	function dontwantcourse(course){
-		if (course['SubjectCode'] == 'pec') return filterstatus['pec'];
-		if (course['SubjectCode'] == 'art') return filterstatus['art'];
-		if (course['SubjectCode'] == 'mus') return filterstatus['mus'];
-		if (course['SubjectCode'] == 'dan') return filterstatus['dan'];
-		//if (course['teacher'] != 'bsea') return true;
+	function dontwantclass(c){
+		if (c['SubjectCode'] == 'pec') return filterstatus['pec'];
+		if (c['SubjectCode'] == 'art') return filterstatus['art'];
+		if (c['SubjectCode'] == 'mus') return filterstatus['mus'];
+		if (c['SubjectCode'] == 'dan') return filterstatus['dan'];
+		//if (c['teacher'] != 'bsea') return true;
 		return false;
 	}
 
@@ -107,10 +107,10 @@ d3.json("./graphdata.json", function(err, info){
 		student['Name'] = student.FirstName + ' ' + student.LastName;
 		student['type'] = 'student';
 		var neighbors = [];
-		if ('Courses' in student){
-			for (i in student['Courses']){
-				var course = student['Courses'][i];
-				neighbors.push(info.classes[course]['ClassCode']);
+		if ('Classes' in student){
+			for (i in student['Classes']){
+				var c = student['Classes'][i];
+				neighbors.push(info.classes[c]['ClassCode']);
 			}
 		}
 		student['neighbors'] = neighbors;
@@ -121,29 +121,29 @@ d3.json("./graphdata.json", function(err, info){
 		indexof[student['Username']] = nodeindex;
 		nodeindex += 1;
 	}
-	/* init course nodes */
-	for (coursename in info.classes){
-		var course = info.classes[coursename];
-		if (dontwantcourse(course)) continue;
-		course['neighbors'] = course['Students'];
-		course['type'] = 'course'; //type? nodetype? as a css attr?
-		course['key'] = course.ClassCode;
-		data['nodes'].push(course);
+	/* init class nodes */
+	for (classname in info.classes){
+		var c = info.classes[classname];
+		if (dontwantclass(c)) continue;
+		c['neighbors'] = c['Students'];
+		c['type'] = 'class'; //type? nodetype? as a css attr?
+		c['key'] = c.ClassCode;
+		data['nodes'].push(c);
 
-		indexof[course['ClassCode']] = nodeindex;
+		indexof[c['ClassCode']] = nodeindex;
 		nodeindex += 1;
 	}
 
 	/* init edges */
 	console.log(indexof)
 	data['edges'] = [];
-	for (coursename in info.classes){
-		var course = info.classes[coursename]
-		if (dontwantcourse(course)) continue;
-		for ( i in course['neighbors']){
+	for (classname in info.classes){
+		var c = info.classes[classname]
+		if (dontwantclass(c)) continue;
+		for ( i in c['neighbors']){
 			edge = {};
-			edge = {'source': indexof[course['ClassCode']], 'target': indexof[course['neighbors'][i]]};
-			edge['nodes'] = [course['ClassCode'], course['neighbors'][i]];
+			edge = {'source': indexof[c['ClassCode']], 'target': indexof[c['neighbors'][i]]};
+			edge['nodes'] = [c['ClassCode'], c['neighbors'][i]];
 			data['edges'].push(edge);
 		}
 	}
@@ -154,7 +154,7 @@ d3.json("./graphdata.json", function(err, info){
 		.attr("preserveAspectRatio", "xMidYMid meet")
 		.attr("width", document.body.clientWidth)
 		.attr("height", document.body.clientHeight)
-		.attr("pointer-events", "all")
+		//.attr("pointer-events", "all")
 		.append('g')
 		.call(d3.behavior.zoom()
 			.scaleExtent([0.2,5])
@@ -175,7 +175,8 @@ d3.json("./graphdata.json", function(err, info){
 		.attr('fill', 'black')
 		.style('stroke-width', '2px')
 		.style('stroke', 'white')
-		.attr('transform', "translate(-" + document.body.clientWidth*8 + ", -" + document.body.clientHeight*8+ ") scale(20)"); //zoom out
+		.attr('transform', "translate(-" + document.body.clientWidth*8 + ", -" + document.body.clientHeight*8+ ") scale(20)") //zoom out
+		.on('click', graphscreen.resethighlights); 
 
 	force = d3.layout.force()
 		.gravity(1)
@@ -237,7 +238,8 @@ var graphscreen = new function(){
 			.attr('highlighted', false)
 			.attr('class', function(d){
 			     return ['edge', d.nodes[0], d.nodes[1]].join(' ');
-			});
+			})
+			.on('click', this.resethighlights);
 		var node = svg.selectAll('.node')
 			.data(data.nodes)
 			.enter().append('circle')
@@ -254,12 +256,14 @@ var graphscreen = new function(){
 			.attr('nodetype', function(d){
 				return d.type;
 			})
-			.on("mouseover", this.highlight)
-			.on("mouseclick", this.highlight) //TODO get from mouseover to mouseclick
-			.on("mouseout", this.resethighlights);
+			.on("click", function(d) {
+				graphscreen.resethighlights();
+				graphscreen.highlight(d);
+			});
+		svg.selectAll('#graph').on('click', this.resethighlights);
 		svg.selectAll('[nodetype=student]')
 			.attr('r', 3);
-		svg.selectAll('[nodetype=course]')
+		svg.selectAll('[nodetype=class]')
 			.attr('r', 5);
 
 		this.resethighlights(); //default colorings
@@ -279,13 +283,16 @@ var graphscreen = new function(){
 		ontick(); //to run when visualized after alpha = 0
 
 	};
+	//clean highligting/resetting mechanism so as to use css classes and transitions.
+	//along with phasing out jquery
 	this.resethighlights = function(){
+		console.log("highlights resettting!");
 		d3.selectAll('.edge[highlighted=true]')
 			.attr('highlighted', false)
 			.transition()
 			.duration(1000)
 			.style('stroke-opacity', '.2');
-		d3.selectAll('[nodetype=course]')
+		d3.selectAll('[nodetype=class]')
 			.attr('highlighted', false)
 			.transition()
 			.duration(1000)
