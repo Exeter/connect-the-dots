@@ -72,6 +72,7 @@ var force;
 	//populatelegend();
 	
 	d3.json("./graphdata.json", function(err, info){
+		window.info = info;
 		if (err) return console.warn(err);
 
 		/* Data Preparation */
@@ -109,11 +110,11 @@ var force;
 				}
 			}
 			student['neighbors'] = neighbors;
-			student['key'] = student.UserName;
+			student['key'] = student.Username;
 
 			data['nodes'].push(student);
 
-			indexof[student['UserName']] = nodeindex;
+			indexof[student['Username']] = nodeindex;
 			nodeindex += 1;
 		}
 		/* init course nodes */
