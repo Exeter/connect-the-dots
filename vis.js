@@ -75,7 +75,7 @@ var force;
 
 populatelegend();
 
-d3.json("./graphdata.json", function(err, info){
+d3.json("https://s3.amazonaws.com/sean.lee.mx/graphdata.json", function(err, info){
 	window.info = info;
 	if (err) return console.warn(err);
 
